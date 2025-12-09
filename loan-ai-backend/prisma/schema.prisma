@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+
+enum DocumentType {
+  UNKNOWN
+  SALARY_SLIP
+  BANK_STATEMENT
+  AADHAAR
+  PAN
+  ADDRESS_PROOF
+  FORM_16
+  OFFICE_ID
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Applicant {
+  id        String     @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  documents Document[]
+  analyses  Analysis[]
+}
+
+model Document {
+  id             String       @id @default(uuid())
+  applicantId    String
+  applicant      Applicant    @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  originalName   String
+  fileName       String
+  filePath       String
+  mimeType       String
+  size           Int
+  documentType   DocumentType @default(UNKNOWN)
+  extractedText  String?
+  classifiedAt   DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([applicantId])
+  @@index([documentType])
+}
+
+model Analysis {
+  id                String    @id @default(uuid())
+  applicantId       String
+  applicant         Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  extractedData     String    // JSON string
+  ruleResults       String    // JSON string
+  riskScore         Int       // 0-100
+  riskLevel         RiskLevel
+  aiSummary         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([applicantId])
+  @@index([riskLevel])
+}
